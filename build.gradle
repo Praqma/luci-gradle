@@ -1,0 +1,46 @@
+plugins {
+    id "com.jfrog.bintray" version "1.2"
+}
+
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+
+group 'net.praqma.luci'
+version = '0.1'
+ext.artifactName = 'luci-gradlePlugin'
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile 'net.praqma.luci:luci-core:0.1'
+}
+
+publishing {
+    publications {
+        plugin(MavenPublication) {
+            from components.java
+            artifactId artifactName
+        }
+    }
+}
+
+bintray {
+    user = project.properties.bintrayUser
+    key = project.properties.bintrayApiKey
+    publications = ['plugin']
+    pkg {
+        repo = 'jars'
+        name = "${group}:${artifactName}"
+        userOrg = 'praqma'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/Praqma/luci-gradle.git'
+        publicDownloadNumbers = true
+    }
+}
+
+  
