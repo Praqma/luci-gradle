@@ -1,6 +1,6 @@
 package net.praqma.luci.gradle
 
-import net.praqma.luci.docker.DockerMachineFactory
+import net.praqma.luci.docker.hosts.DockerMachineFactory
 import net.praqma.luci.model.JenkinsModel
 import net.praqma.luci.model.LuciboxModel
 import net.praqma.luci.utils.ClasspathResources

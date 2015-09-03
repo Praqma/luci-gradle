@@ -2,9 +2,8 @@ package net.praqma.luci.gradle
 
 import groovy.transform.CompileStatic
 import net.praqma.luci.docker.DockerHost
-import net.praqma.luci.docker.DockerHostImpl
-import net.praqma.luci.docker.DockerMachineFactory
-import net.praqma.luci.docker.net.praqma.luci.docker.hosts.DockerMachineHost
+import net.praqma.luci.docker.hosts.DockerMachineFactory
+import net.praqma.luci.docker.hosts.DockerMachineHost
 
 @CompileStatic
 class GradleDockerHost {
