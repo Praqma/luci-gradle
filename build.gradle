@@ -7,8 +7,11 @@ apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
 group 'net.praqma.luci'
-version = '0.1'
-ext.artifactName = 'luci-gradlePlugin'
+version = '0.2'
+ext {
+    artifact = 'luci-gradlePlugin'
+    pluginId = 'net.praqma.luci'
+}
 
 repositories {
     mavenLocal()
@@ -17,14 +20,14 @@ repositories {
 
 dependencies {
     compile gradleApi()
-    compile 'net.praqma.luci:luci-core:0.1'
+    compile (findProject(':luci-core') ?: 'net.praqma.luci:luci-core:0.2')
 }
 
 publishing {
     publications {
         plugin(MavenPublication) {
             from components.java
-            artifactId artifactName
+            artifactId artifact
         }
     }
 }
@@ -33,13 +36,18 @@ bintray {
     user = project.properties.bintrayUser
     key = project.properties.bintrayApiKey
     publications = ['plugin']
+    dryRun = false //Whether to run this as dry-run, without deploying
+    publish = true //If version should be auto published after an upload
     pkg {
-        repo = 'jars'
-        name = "${group}:${artifactName}"
+        repo = 'gradle-plugins'
+        name = "${group}:${artifact}"
         userOrg = 'praqma'
         licenses = ['Apache-2.0']
         vcsUrl = 'https://github.com/Praqma/luci-gradle.git'
         publicDownloadNumbers = true
+        version {
+            attributes = ['gradle-plugin': "${pluginId}:${group}:${artifact}"]
+        }
     }
 }
 

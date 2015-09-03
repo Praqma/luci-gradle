@@ -1,12 +1,10 @@
 package net.praqma.luci.gradle
 
-import net.praqma.luci.dev.BuildAllImages
-import net.praqma.luci.docker.DockerHost
 import net.praqma.luci.docker.DockerMachineFactory
 import net.praqma.luci.model.JenkinsModel
 import net.praqma.luci.model.LuciboxModel
+import net.praqma.luci.utils.ClasspathResources
 import net.praqma.luci.utils.SystemCheck
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
@@ -16,9 +14,13 @@ class LuciPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        project.apply(plugin: 'base')
+
+        // Define directory where resources are extracted from jar
+        ClasspathResources.extractedResoucesDir = new File("${project.buildDir}/extractedResources")
+
         extendJenkinsModel(project)
 
-        project.apply(plugin: 'base')
         project.extensions.create('luci', LuciExtension, project)
 
         def boxes = project.container(LuciboxModel)
