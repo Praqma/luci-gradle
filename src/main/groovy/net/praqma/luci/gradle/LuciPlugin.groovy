@@ -57,7 +57,7 @@ class LuciPlugin implements Plugin<Project> {
             if (box.dockerHost == null) {
                 box.dockerHost =  project.luci.defaultHost
             }
-            box.initialize()
+            box.initialize(project.file("${project.buildDir}/luciboxes/${box.name}"))
             // Task to generate docker-compose yaml and other things needed
             // to star the lucibox
             String taskNamePrefix = "luci${box.name.capitalize()}"
@@ -67,8 +67,7 @@ class LuciPlugin implements Plugin<Project> {
                 group taskGroup
                 description "Bring up '${box.name}'"
                 doFirst {
-                    File dir = project.file("${project.buildDir}/luciboxes/${box.name}")
-                    box.bringUp(dir)
+                    box.bringUp()
                 }
             }
 
@@ -92,8 +91,7 @@ class LuciPlugin implements Plugin<Project> {
                 group taskGroup
                 description "Miscellaneous information about '${box.name}'"
                 doFirst {
-                    File dir = project.file("${project.buildDir}/luciboxes/${box.name}")
-                    box.printInformation(dir)
+                    box.printInformation()
                 }
             }
         }
