@@ -17,14 +17,15 @@ plugins {
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
+apply plugin: 'java-gradle-plugin'
 apply plugin: 'com.gradle.plugin-publish'
 
 group 'net.praqma.luci'
 version = '0.4-SNAPSHOT'
 ext {
-    artifact = 'luci-gradlePlugin'
-    pluginId = 'net.praqma.luci'
-    coreVersion = version
+    artifact = 'luci-gradlePlugin'   // The maven artifact name
+    pluginId = 'net.praqma.luci'     // The Gradle plugin id
+    coreVersion = version            // Version of dependency luci-core
 }
 
 repositories {
@@ -32,7 +33,8 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
+    // If 'luci-core' is found as project in multiproject build use project dependency
+    // otherwise depend on the jar
     compile (findProject(':luci-core') ?: "net.praqma.luci:luci-core:${coreVersion}")
 }
 
