@@ -4,7 +4,10 @@ import net.praqma.luci.docker.hosts.DockerMachineFactory
 import net.praqma.luci.model.JenkinsModel
 import net.praqma.luci.model.LuciboxModel
 import net.praqma.luci.utils.ClasspathResources
+import net.praqma.luci.utils.LuciSettings
 import net.praqma.luci.utils.SystemCheck
+import org.gradle.api.GradleException
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
@@ -31,24 +34,86 @@ class LuciPlugin implements Plugin<Project> {
         project.luci.extensions.hosts = hosts
         project.luci.extensions.machineFactories = factories
 
+
+        setupFactories(factories)
+
         project.afterEvaluate {
+            // Set bindings for factories
+            project.luci.machineFactories.each { DockerMachineFactory f ->
+                f.bindings.settings = LuciSettings.instance
+                f.bindings.project = project
+                f.bindings.luci = project.luci
+                // Define lookup function. Looking in System properties, project project and Luci settings
+                // TODO consider order of lookup
+                f.bindings.lookup = { key ->
+                    System.properties[key] ?: project.properties[key] ?:
+                            LuciSettings.instance[key] ?: {
+                                throw new GradleException("Property '${key}' not defined")
+                            }()
+                }
+            }
+
             createTasks(project)
         }
 
+    }
+
+    void setupFactories(NamedDomainObjectContainer<DockerMachineFactory> factories) {
+        // Complete VirtualBox factory
+        factories.create('virtualBox') { driver 'virtualbox' }
+
+        // Some meaningful defaults for Zetta.io
+        factories.create('zetta') {
+            driver 'openstack'
+
+            options 'openstack-flavor-id': '6',
+                    'openstack-image-id': 'd0a89aa8-9644-408d-a023-4dcc1148ca01',
+                    'openstack-floatingip-pool': 'Public',
+                    'openstack-ssh-user': 'ubuntu',
+                    'openstack-net-name': 'Private',
+                    'openstack-sec-groups': 'default,DockerAPI',
+                    'openstack-auth-url': 'https://identity.api.zetta.io/v3',
+                    'openstack-region': 'no-osl1',
+                    'openstack-tenant-name': 'Standard',
+                    'openstack-domain-id': '${lookup("zetta.domainId")}',
+                    'openstack-username': '${lookup("zetta.username")}',
+                    'openstack-password': '${lookup("zetta.password")}'
+        }
     }
 
     void createTasks(Project project) {
         TaskContainer tasks = project.tasks
 
         // General Luci tasks
-        tasks.create('luciSystemCheck') {
+        tasks.create('systemCheck') {
             group 'luci'
             description "Check the systems fitness for playing wiht Luci"
 
-            doFirst {
+            doLast {
                 new SystemCheck(new PrintWriter(System.out)).perform()
 
                 println "Docker host: ${project.luci.defaultHost}"
+            }
+        }
+
+        tasks.create('listMachineFactories') {
+            group 'luci'
+            description "List all defined Docker Machine factories"
+
+            doLast {
+                String header = "Defined Machine Factories"
+                println "\n${header}\n${'=' * header.length()}\n"
+
+                project.luci.machineFactories.each { DockerMachineFactory factory ->
+                    String cmdLine
+                    try {
+                        List<String> list = factory.commandLine('<name>', true)
+                        cmdLine = list.collect { "'${it}'"}.join(' ')
+                    } catch (Exception e) {
+                        cmdLine = "error: ${e.message}"
+                    }
+                    println "  ${factory.name} : ${cmdLine}"
+                }
             }
         }
 
@@ -60,7 +125,7 @@ class LuciPlugin implements Plugin<Project> {
             box.initialize(project.file("${project.buildDir}/luciboxes/${box.name}"))
             // Task to generate docker-compose yaml and other things needed
             // to star the lucibox
-            String taskNamePrefix = "luci${box.name.capitalize()}"
+            String taskNamePrefix = box.name
             String taskGroup = "lucibox ${box.name.capitalize()}"
 
             tasks.create("${taskNamePrefix}Up") {
