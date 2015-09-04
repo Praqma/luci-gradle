@@ -22,7 +22,7 @@ class LuciPlugin implements Plugin<Project> {
         // Define directory where resources are extracted from jar
         ClasspathResources.extractedResoucesDir = new File("${project.buildDir}/extractedResources")
 
-        extendJenkinsModel(project)
+        enhanceJenkinsModel(project)
 
         project.extensions.create('luci', LuciExtension, project)
 
@@ -37,23 +37,12 @@ class LuciPlugin implements Plugin<Project> {
 
         setupFactories(factories)
 
-        project.afterEvaluate {
-            // Set bindings for factories
-            project.luci.machineFactories.each { DockerMachineFactory f ->
-                f.bindings.settings = LuciSettings.instance
-                f.bindings.project = project
-                f.bindings.luci = project.luci
-                // Define lookup function. Looking in System properties, project project and Luci settings
-                // TODO consider order of lookup
-                f.bindings.lookup = { key ->
-                    System.properties[key] ?: project.properties[key] ?:
-                            LuciSettings.instance[key] ?: {
-                                throw new GradleException("Property '${key}' not defined")
-                            }()
-                }
-            }
+        // Make luciInitialize available as extra property. This is
+        // used in unit tests
+        project.ext.luciInitialize = { luciInitialize(project) }
 
-            createTasks(project)
+        project.afterEvaluate {
+            luciInitialize(project)
         }
 
     }
@@ -81,7 +70,31 @@ class LuciPlugin implements Plugin<Project> {
         }
     }
 
-    void createTasks(Project project) {
+    /**
+     * Initialize the project as a Luci project.
+     * <p>
+     * This method must be call after the project is evaluated (i.e. when all configuration is done).
+     * It will create Luci specific tasks, and other initialization related to Luci.
+     */
+    void luciInitialize(Project project) {
+        project.luci.machineFactories.each { DockerMachineFactory f ->
+            f.bindings.settings = LuciSettings.instance
+            f.bindings.project = project
+            f.bindings.luci = project.luci
+            // Define lookup function. Looking in System properties, project project and Luci settings
+            // TODO consider order of lookup
+            f.bindings.lookup = { key ->
+                System.properties[key] ?: project.properties[key] ?:
+                        LuciSettings.instance[key] ?: {
+                            throw new GradleException("Property '${key}' not defined")
+                        }()
+            }
+        }
+
+        createTasks(project)
+    }
+
+    private void createTasks(Project project) {
         TaskContainer tasks = project.tasks
 
         // General Luci tasks
@@ -163,14 +176,16 @@ class LuciPlugin implements Plugin<Project> {
     }
 
     /**
-     * Extend the JenkinsModel (that doesn't know about Gradle)
+     * Enhance the JenkinsModel (that doesn't know about Gradle)
      * with some Gradle friendly methods
      *
      * @param project
      */
-    private void extendJenkinsModel(Project project) {
+    private void enhanceJenkinsModel(Project project) {
         JenkinsModel.metaClass.initFiles = { Closure copySpec ->
             JenkinsModel model = delegate
+            // A closure that will use the copySpec to copy/create the files and them
+            // add them as java.util.File objects to initFiles of the JenkinsModel
             Closure action = {
                 CopySpec spec = project.copySpec(copySpec)
                 File workDir = new File(project.buildDir, "luciboxes/${model.box.name}/initFiles${new Random().nextInt()}${System.nanoTime()}")
