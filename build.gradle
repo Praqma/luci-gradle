@@ -1,16 +1,30 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.1"
+    }
+}
+
 plugins {
     id "com.jfrog.bintray" version "1.2"
 }
 
+
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
+apply plugin: 'com.gradle.plugin-publish'
 
 group 'net.praqma.luci'
-version = '0.2'
+version = '0.4-SNAPSHOT'
 ext {
     artifact = 'luci-gradlePlugin'
     pluginId = 'net.praqma.luci'
+    coreVersion = version
 }
 
 repositories {
@@ -19,7 +33,7 @@ repositories {
 
 dependencies {
     compile gradleApi()
-    compile (findProject(':luci-core') ?: 'net.praqma.luci:luci-core:0.2')
+    compile (findProject(':luci-core') ?: "net.praqma.luci:luci-core:${coreVersion}")
 }
 
 task sourceJar(type: Jar) {
@@ -57,4 +71,17 @@ bintray {
     }
 }
 
-  
+
+pluginBundle {
+    website = 'https://github.com/Praqma/luci-gradle'
+    vcsUrl = 'https://github.com/Praqma/luci-gradle.git'
+    description = 'Gradle configuration for Luci. Luci Understands Continuous Integration'
+    tags = ['luci']
+
+    plugins {
+        greetingsPlugin {
+            id = 'net.praqma.luci'
+            displayName = 'Luci with Gradle'
+        }
+    }
+}
