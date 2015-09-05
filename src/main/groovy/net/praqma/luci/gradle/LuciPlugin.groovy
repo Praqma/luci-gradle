@@ -1,9 +1,12 @@
 package net.praqma.luci.gradle
 
+import groovyx.gpars.GParsPool
+import net.praqma.luci.docker.DockerHost
 import net.praqma.luci.docker.hosts.DockerMachineFactory
 import net.praqma.luci.model.JenkinsModel
 import net.praqma.luci.model.LuciboxModel
 import net.praqma.luci.utils.ClasspathResources
+import net.praqma.luci.utils.ExternalCommand
 import net.praqma.luci.utils.LuciSettings
 import net.praqma.luci.utils.SystemCheck
 import org.gradle.api.GradleException
@@ -120,12 +123,42 @@ class LuciPlugin implements Plugin<Project> {
                 project.luci.machineFactories.each { DockerMachineFactory factory ->
                     String cmdLine
                     try {
-                        List<String> list = factory.commandLine('<name>', true)
-                        cmdLine = list.collect { "'${it}'"}.join(' ')
+                        List<String> list = factory.commandLine('<name>')
+                        ExternalCommand ec = new ExternalCommand()
+                        ec.sensitiveData = factory.sensitiveData()
+                        cmdLine = ec.formatCmdForLogging(list)
                     } catch (Exception e) {
                         cmdLine = "error: ${e.message}"
                     }
                     println "  ${factory.name} : ${cmdLine}"
+                }
+            }
+        }
+
+        tasks.create('listAllHosts') {
+            group 'luci'
+            description 'List all defined Docker hosts'
+
+            doLast {
+                String header = "Defined Docker Hosts"
+                println "\n${header}\n${'=' * header.length()}\n"
+
+                project.luci.hosts.each { DockerHost host ->
+                    println "  ${host.name} : ${host} - ${host.status}"
+                }
+            }
+        }
+
+        tasks.create('initializeAllHosts') {
+            group 'luci'
+            description 'Initialize all defined Docker hosts'
+            dependsOn tasks.listAllHosts
+
+            doLast {
+                GParsPool.withPool {
+                    project.luci.hosts.eachParallel { DockerHost host ->
+                        host.initialize()
+                    }
                 }
             }
         }

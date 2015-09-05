@@ -36,6 +36,7 @@ dependencies {
     // If 'luci-core' is found as project in multiproject build use project dependency
     // otherwise depend on the jar
     compile (findProject(':luci-core') ?: "net.praqma.luci:luci-core:${coreVersion}")
+    compile 'org.codehaus.gpars:gpars:1.2.1'
 }
 
 task sourceJar(type: Jar) {
