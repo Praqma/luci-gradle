@@ -52,11 +52,17 @@ class LuciPlugin implements Plugin<Project> {
 
     void setupFactories(NamedDomainObjectContainer<DockerMachineFactory> factories) {
         // Complete VirtualBox factory
-        factories.create('virtualBox') { driver 'virtualbox' }
+        factories.create('virtualBox') { driver ='virtualbox' }
 
         // Some meaningful defaults for Zetta.io
         factories.create('zetta') {
-            driver 'openstack'
+            driver = 'openstack'
+
+            addProperty 'username', 'openstack-username'
+            addProperty 'password', 'openstack-password'
+            addProperty 'domainId', 'openstack-domain-id'
+            addProperty 'tenantName', 'openstack-tenant-name'
+
 
             options 'openstack-flavor-id': '6',
                     'openstack-image-id': 'd0a89aa8-9644-408d-a023-4dcc1148ca01',
@@ -66,7 +72,7 @@ class LuciPlugin implements Plugin<Project> {
                     'openstack-sec-groups': 'default,DockerAPI',
                     'openstack-auth-url': 'https://identity.api.zetta.io/v3',
                     'openstack-region': 'no-osl1',
-                    'openstack-tenant-name': 'Standard',
+                    'openstack-tenant-name': '${lookup("zetta.tenantName", "Standard")}',
                     'openstack-domain-id': '${lookup("zetta.domainId")}',
                     'openstack-username': '${lookup("zetta.username")}',
                     'openstack-password': '${lookup("zetta.password")}'
@@ -86,9 +92,10 @@ class LuciPlugin implements Plugin<Project> {
             f.bindings.luci = project.luci
             // Define lookup function. Looking in System properties, project project and Luci settings
             // TODO consider order of lookup
-            f.bindings.lookup = { key ->
-                System.properties[key] ?: project.properties[key] ?:
-                        LuciSettings.instance[key] ?: {
+            f.bindings.lookup = { key, defaultValue = null ->
+                f.properties[key] ?: System.properties[key] ?:
+                        project.properties[key] ?: LuciSettings.instance[key] ?:
+                                defaultValue ?: {
                             throw new GradleException("Property '${key}' not defined")
                         }()
             }
