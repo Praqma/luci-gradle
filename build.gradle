@@ -21,7 +21,7 @@ apply plugin: 'java-gradle-plugin'
 apply plugin: 'com.gradle.plugin-publish'
 
 group 'net.praqma.luci'
-version = '0.4-SNAPSHOT'
+version = '0.4'
 ext {
     artifact = 'luci-gradlePlugin'   // The maven artifact name
     pluginId = 'net.praqma.luci'     // The Gradle plugin id
