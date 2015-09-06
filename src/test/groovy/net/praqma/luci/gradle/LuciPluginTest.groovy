@@ -33,13 +33,34 @@ class LuciPluginTest {
             luci {
                 boxes {
                     foo {
+                        service('jenkins') {
+                            // Add groovy files in the jenkinsInit.d dir to the jenkins init.d dir
+                            initFiles fileTree(dir: 'jenkinsInit.d', include: '**/*.groovy')
 
+                            // You can also specify files with a Gradle CopySpec
+                            // See https://docs.gradle.org/current/userguide/working_with_files.html for some examples
+                            initFiles {
+                                // Copy all templates files from jenkinsInit.d
+                                from 'jenkinsInit.d'
+                                include '*.template'
+                                // Change extension from .template to  .groovy
+                                rename '(.*)\\.template', '$1\\.groovy'
+                                // Insert the project name in templates
+                                expand(name: name)
+                            }
+
+                            seedJob.with {
+                                name = 'dummy'
+                            }
+                        }
                     }
                 }
             }
         }
 
         project.luciInitialize()
+        project.luci.boxes.foo.preStart()
+        project.luci.boxes.foo.printInformation()
 
         // Verify we have expected tasks
         assert project.fooUp instanceof Task
