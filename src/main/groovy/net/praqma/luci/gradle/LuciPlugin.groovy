@@ -4,6 +4,7 @@ import groovyx.gpars.GParsPool
 import net.praqma.luci.docker.DockerHost
 import net.praqma.luci.docker.hosts.DockerMachineFactory
 import net.praqma.luci.model.JenkinsModel
+import net.praqma.luci.model.JenkinsSeedJobModel
 import net.praqma.luci.model.LuciboxModel
 import net.praqma.luci.utils.ClasspathResources
 import net.praqma.luci.utils.ExternalCommand
@@ -222,6 +223,7 @@ class LuciPlugin implements Plugin<Project> {
      * @param project
      */
     private void enhanceJenkinsModel(Project project) {
+        // A CopySpec api for initFile
         JenkinsModel.metaClass.initFiles = { Closure copySpec ->
             JenkinsModel model = delegate
             // A closure that will use the copySpec to copy/create the files and them
@@ -238,6 +240,7 @@ class LuciPlugin implements Plugin<Project> {
             }
             model.addPreStartAction(action)
         }
+
     }
 
 }
