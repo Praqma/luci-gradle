@@ -1,8 +1,10 @@
 package net.praqma.luci.gradle
 
+import net.praqma.luci.test.TestDockerHosts
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -33,6 +35,7 @@ class LuciPluginTest {
             luci {
                 boxes {
                     foo {
+                        dockerHost = TestDockerHosts.primary
                         service('jenkins') {
                             // Add groovy files in the jenkinsInit.d dir to the jenkins init.d dir
                             initFiles fileTree(dir: 'jenkinsInit.d', include: '**/*.groovy')

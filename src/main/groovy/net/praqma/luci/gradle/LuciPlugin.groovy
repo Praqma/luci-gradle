@@ -164,7 +164,7 @@ class LuciPlugin implements Plugin<Project> {
 
             doLast {
                 GParsPool.withPool {
-                    project.luci.hosts.eachParallel { DockerHost host ->
+                    project.luci.hosts.eachParallel(20) { DockerHost host ->
                         host.initialize()
                     }
                 }
