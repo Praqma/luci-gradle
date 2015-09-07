@@ -29,6 +29,7 @@ class GradleDockerHost {
     }
 
     String toString() {
+        assert dockerHost != this
         return dockerHost ? dockerHost.toString() : super.toString()
     }
 }
