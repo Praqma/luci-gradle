@@ -159,14 +159,26 @@ class LuciPlugin implements Plugin<Project> {
 
         tasks.create('initializeAllHosts') {
             group 'luci'
-            description 'Initialize all defined Docker hosts'
+            description 'Initialize all defined Docker hosts. I.e. use factory to create the host and start it.'
             dependsOn tasks.listAllHosts
 
             doLast {
-                GParsPool.withPool {
-                    project.luci.hosts.eachParallel(20) { DockerHost host ->
-                        host.initialize()
-                    }
+                List hostList = project.luci.hosts as List
+                GParsPool.withPool(20) {
+                    hostList.eachParallel { h -> h.initialize() }
+                }
+            }
+        }
+
+        tasks.create('pullLuciImagesOnAllHosts') {
+            group 'luci'
+            description 'Initialize all defined Docker hosts and load all Luci images.'
+            dependsOn tasks.initializeAllHosts
+
+            doLast {
+                List hostList = project.luci.hosts as List
+                GParsPool.withPool(20) {
+                    hostList.eachParallel { h -> h.pullLuciImages() }
                 }
             }
         }
